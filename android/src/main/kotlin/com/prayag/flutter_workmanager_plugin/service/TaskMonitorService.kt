@@ -10,7 +10,8 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import com.prayag.flutter_workmanager_plugin.workmanager.CopyUserDataWorker
+import androidx.work.workDataOf
+import com.prayag.flutter_workmanager_plugin.workmanager.DartCallbackWorker
 
 class TaskMonitorService : Service() {
 
@@ -46,11 +47,21 @@ class TaskMonitorService : Service() {
     }
 
     private fun triggerCleanup() {
-        Log.d("TAG", "App is closed (Task removed), syncing data...")
+        Log.d("TAG", "App is closed (Task removed), scheduling Flutter task...")
 
-        // Enqueue the worker to copy data from users to users_copy
-        val copyWorkRequest = OneTimeWorkRequestBuilder<CopyUserDataWorker>().build()
-        WorkManager.getInstance(applicationContext).enqueue(copyWorkRequest)
+        val prefs = getSharedPreferences("flutter_workmanager_plugin", MODE_PRIVATE)
+        val callbackHandle = prefs.getLong("callback_handle", 0L)
+
+        if (callbackHandle == 0L) {
+            Log.e("TAG", "No valid callback handle found for Dart worker")
+            return
+        }
+
+        val request = OneTimeWorkRequestBuilder<DartCallbackWorker>()
+            .setInputData(workDataOf("callback_handle" to callbackHandle))
+            .build()
+
+        WorkManager.getInstance(applicationContext).enqueue(request)
     }
 
     companion object {
