@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_workmanager_plugin/flutter_workmanager_plugin.dart';
@@ -33,6 +32,8 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   final FlutterWorkmanagerPlugin _plugin = FlutterWorkmanagerPlugin();
+  static const platform = MethodChannel('background_database_sync');
+
   List<Map<String, dynamic>> users = [];
   List<Map<String, dynamic>> usersCopy = [];
   String schemaJson = '';
@@ -43,6 +44,7 @@ class _MainScreenState extends State<MainScreen> {
     super.initState();
     _startMonitoring();
     _loadData();
+    _setupNativeListener();
   }
 
   Future<void> _startMonitoring() async {
@@ -53,10 +55,19 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
-  Future<void> _loadData() async {
-    // Load from SQLite database
-    final db = await DatabaseHelper.instance.database;
+  void _setupNativeListener() {
+    platform.setMethodCallHandler((call) async {
+      if (call.method == "onDataExtracted") {
+        setState(() {
+          schemaJson = call.arguments as String;
+          showSchema = true;
+        });
+      }
+    });
+  }
 
+  Future<void> _loadData() async {
+    final db = await DatabaseHelper.instance.database;
     final usersResult = await db.query('users');
     final usersCopyResult = await db.query('users_copy');
 
@@ -81,7 +92,7 @@ class _MainScreenState extends State<MainScreen> {
   void _clearUserCopy() async {
     try {
       await DatabaseHelper.instance.clearUserCopy();
-      await _loadData(); // reload UI
+      await _loadData();
     } catch (e) {
       debugPrint('Failed to clear user copy: $e');
     }
@@ -91,8 +102,10 @@ class _MainScreenState extends State<MainScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
         const SizedBox(height: 8),
         Expanded(
           child: ListView.builder(
@@ -102,13 +115,14 @@ class _MainScreenState extends State<MainScreen> {
               return Card(
                 child: ListTile(
                   title: Text(user["name"] ?? ''),
-                  subtitle: Text('${user["description"] ?? ''} | ${user["grade"] ?? ''}'),
+                  subtitle: Text(
+                      '${user["description"] ?? ''} | ${user["grade"] ?? ''}'),
                   trailing: Text(user["address"] ?? ''),
                 ),
               );
             },
           ),
-        )
+        ),
       ],
     );
   }
@@ -136,7 +150,7 @@ class _MainScreenState extends State<MainScreen> {
               ElevatedButton.icon(
                 onPressed: _clearUserCopy,
                 icon: const Icon(Icons.delete),
-                label: const Text("Clear Copy"),
+                label: const Text("Clear"),
               ),
               ElevatedButton.icon(
                 onPressed: _generateSchemaInfo,
@@ -166,12 +180,9 @@ class _MainScreenState extends State<MainScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'Database Schema (JSON)',
-                // style: Theme.of(context).textTheme.titleLarge,
-              ),
+            const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text('Extracted Data (JSON)'),
             ),
             IconButton(
               icon: const Icon(Icons.close),
@@ -190,9 +201,6 @@ class _MainScreenState extends State<MainScreen> {
                     ElevatedButton.icon(
                       onPressed: () {
                         Clipboard.setData(ClipboardData(text: schemaJson));
-                        // ScaffoldMessenger.of(context).showSnackBar(
-                        //     const SnackBar(content: Text('Schema copied to clipboard'))
-                        // );
                       },
                       icon: const Icon(Icons.copy),
                       label: const Text('Copy to Clipboard'),

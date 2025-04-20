@@ -4,47 +4,37 @@ import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.Bundle
 import android.util.Log
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import androidx.work.workDataOf
 import com.prayag.flutter_workmanager_plugin.database.DatabaseHelper
 import com.prayag.flutter_workmanager_plugin.service.TaskMonitorService
-import com.prayag.flutter_workmanager_plugin.workmanager.CopyUserDataWorker
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
-import io.flutter.plugin.common.MethodChannel.MethodCallHandler
-import io.flutter.plugin.common.MethodChannel.Result
+import org.json.JSONArray
+import org.json.JSONObject
 
-/** FlutterWorkmanagerPlugin */
-class FlutterWorkmanagerPlugin : FlutterPlugin, MethodCallHandler {
+class FlutterWorkmanagerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
   private lateinit var context: Context
   private lateinit var channel: MethodChannel
 
   private val lifecycleCallbacks = object : Application.ActivityLifecycleCallbacks {
-    override fun onActivityResumed(activity: android.app.Activity) {
-      // When the app comes to the foreground
-    }
-
+    override fun onActivityResumed(activity: android.app.Activity) {}
     override fun onActivityPaused(activity: android.app.Activity) {
-      // When the app goes to the background
-//      logAndSyncData()
       Log.d("TAG", "onActivityPaused: is paused triggered")
     }
 
     override fun onActivityStarted(activity: android.app.Activity) {}
-
     override fun onActivityDestroyed(activity: android.app.Activity) {
-      logAndSyncData()
+      logAndExtractData()
     }
 
-    override fun onActivitySaveInstanceState(activity: android.app.Activity, outState: android.os.Bundle) {}
-
+    override fun onActivitySaveInstanceState(activity: android.app.Activity, outState: Bundle) {}
     override fun onActivityStopped(activity: android.app.Activity) {}
-
-    override fun onActivityCreated(activity: android.app.Activity, savedInstanceState: android.os.Bundle?) {}
+    override fun onActivityCreated(activity: android.app.Activity, savedInstanceState: Bundle?) {}
   }
 
   override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
@@ -52,7 +42,6 @@ class FlutterWorkmanagerPlugin : FlutterPlugin, MethodCallHandler {
     channel = MethodChannel(binding.binaryMessenger, "background_database_sync")
     channel.setMethodCallHandler(this)
 
-    // Register the lifecycle callbacks to monitor app state
     val application = context.applicationContext as Application
     application.registerActivityLifecycleCallbacks(lifecycleCallbacks)
   }
@@ -68,9 +57,7 @@ class FlutterWorkmanagerPlugin : FlutterPlugin, MethodCallHandler {
     }
   }
 
-  // Start monitoring service
   private fun startMonitoringService() {
-    Log.d("TAG", "startMonitoring function: triggered")
     val serviceIntent = Intent(context, TaskMonitorService::class.java)
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       context.startForegroundService(serviceIntent)
@@ -79,15 +66,38 @@ class FlutterWorkmanagerPlugin : FlutterPlugin, MethodCallHandler {
     }
   }
 
-  // Log when the app is closed or in the background, and sync data
-  private fun logAndSyncData() {
-    Log.d("TAG", "App is closing or moving to background - syncing data")
+  private fun logAndExtractData() {
+    Log.d("TAG", "App is closing - extracting data from Users table")
+
     val dbHelper = DatabaseHelper(context)
-    dbHelper.copyUserDataToUsersCopy() // Sync the database when app is closed
+    val db = dbHelper.readableDatabase
+
+    val cursor = db.rawQuery("SELECT * FROM Users", null)
+    val dataArray = JSONArray()
+
+    if (cursor.moveToFirst()) {
+      do {
+        val row = JSONObject()
+        for (i in 0 until cursor.columnCount) {
+          val columnName = cursor.getColumnName(i)
+          val value = cursor.getString(i)
+          row.put(columnName, value)
+        }
+        dataArray.put(row)
+      } while (cursor.moveToNext())
+    }
+
+    cursor.close()
+    db.close()
+
+    // Log the JSON data
+    Log.d("TAG", "Extracted JSON Data: ${dataArray.toString()}")
+
+    // Optional: Send this JSON to Flutter via MethodChannel if needed
+    // channel.invokeMethod("onDataExtracted", dataArray.toString())
   }
 
   override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
-    // Remove the lifecycle callback when the plugin is detached
     val application = context.applicationContext as Application
     application.unregisterActivityLifecycleCallbacks(lifecycleCallbacks)
     channel.setMethodCallHandler(null)
