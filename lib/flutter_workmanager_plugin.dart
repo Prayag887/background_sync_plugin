@@ -1,19 +1,20 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 
 class FlutterWorkmanagerPlugin {
   static const MethodChannel _channel = MethodChannel('background_database_sync');
 
-  static Future<void> startSync(String dbPath) async {
-    await _channel.invokeMethod('startSync', {'dbPath': dbPath});
-  }
+  static Future<void> startMonitoring(String dbPath, String dbName) async {
+    if (kDebugMode) {
+      print("Database path: $dbPath");
+      print("Database name: $dbName");
+    }
 
-  static Future<void> startMonitoring() async {
-    await _channel.invokeMethod('startMonitoring');
-  }
-
-  static Future<void> clearUserCopy() async {
-    await _channel.invokeMethod('clearUserCopy');
+    await _channel.invokeMethod('startMonitoring', {
+      'dbPath': dbPath,
+      'dbName': dbName,
+    });
   }
 
 }

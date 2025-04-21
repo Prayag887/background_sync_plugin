@@ -8,18 +8,20 @@ import android.os.Bundle
 import android.util.Log
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
-import com.prayag.flutter_workmanager_plugin.database.DatabaseHelper
-import com.prayag.flutter_workmanager_plugin.service.TaskMonitorService
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.File
 
 class FlutterWorkmanagerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
   private lateinit var context: Context
   private lateinit var channel: MethodChannel
+
+  private var databasePath: String? = null
+  private var databaseName: String? = null
 
   private val lifecycleCallbacks = object : Application.ActivityLifecycleCallbacks {
     override fun onActivityResumed(activity: android.app.Activity) {}
@@ -49,7 +51,12 @@ class FlutterWorkmanagerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler 
   override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
     when (call.method) {
       "startMonitoring" -> {
-        Log.d("TAG", "startMonitoring: triggered")
+        databasePath = call.argument<String>("dbPath")
+        databaseName = call.argument<String>("dbName")
+
+        Log.d("TAG", "Received DB Path: $databasePath")
+        Log.d("TAG", "Received DB Name: $databaseName")
+
         startMonitoringService()
         result.success("Monitoring started")
       }
@@ -58,7 +65,7 @@ class FlutterWorkmanagerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler 
   }
 
   private fun startMonitoringService() {
-    val serviceIntent = Intent(context, TaskMonitorService::class.java)
+    val serviceIntent = Intent(context, com.prayag.flutter_workmanager_plugin.service.TaskMonitorService::class.java)
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
       context.startForegroundService(serviceIntent)
     } else {
@@ -67,10 +74,24 @@ class FlutterWorkmanagerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler 
   }
 
   private fun logAndExtractData() {
-    Log.d("TAG", "App is closing - extracting data from Users table")
+    val dbFullPath = if (!databasePath.isNullOrEmpty() && !databaseName.isNullOrEmpty()) {
+      File(databasePath, databaseName).absolutePath
+    } else {
+      Log.e("TAG", "Database path or name not set")
+      return
+    }
 
-    val dbHelper = DatabaseHelper(context)
-    val db = dbHelper.readableDatabase
+    Log.d("TAG", "Using full DB path: $dbFullPath")
+
+    val dbFile = File(dbFullPath)
+    if (!dbFile.exists()) {
+      Log.e("TAG", "Database file does not exist at: $dbFullPath")
+      return
+    }
+
+    val db = android.database.sqlite.SQLiteDatabase.openDatabase(
+      dbFullPath, null, android.database.sqlite.SQLiteDatabase.OPEN_READONLY
+    )
 
     val cursor = db.rawQuery("SELECT * FROM Users", null)
     val dataArray = JSONArray()
@@ -90,11 +111,7 @@ class FlutterWorkmanagerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler 
     cursor.close()
     db.close()
 
-    // Log the JSON data
     Log.d("TAG", "Extracted JSON Data: ${dataArray.toString()}")
-
-    // Optional: Send this JSON to Flutter via MethodChannel if needed
-    // channel.invokeMethod("onDataExtracted", dataArray.toString())
   }
 
   override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {

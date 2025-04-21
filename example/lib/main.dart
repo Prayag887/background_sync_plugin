@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_workmanager_plugin/flutter_workmanager_plugin.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -48,8 +49,21 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Future<void> _startMonitoring() async {
+    final dir = await getDatabasesPath();
+    const dbName = 'app_database.db';
+
     try {
-      await FlutterWorkmanagerPlugin.startMonitoring();
+      final files = Directory(dir).listSync(recursive: false, followLinks: false);
+
+      if (files.isEmpty) {
+        debugPrint("Directory is empty: ${dir}");
+      } else {
+        for (final file in files) {
+          debugPrint("File/Dir: ${file.path}");
+        }
+      }
+
+      await FlutterWorkmanagerPlugin.startMonitoring(dir, dbName);
     } catch (e) {
       debugPrint('Error starting monitoring: $e');
     }
@@ -69,11 +83,11 @@ class _MainScreenState extends State<MainScreen> {
   Future<void> _loadData() async {
     final db = await DatabaseHelper.instance.database;
     final usersResult = await db.query('users');
-    final usersCopyResult = await db.query('users_copy');
+    // final usersCopyResult = await db.query('users_copy');
 
     setState(() {
       users = usersResult;
-      usersCopy = usersCopyResult;
+      // usersCopy = usersCopyResult;
     });
   }
 

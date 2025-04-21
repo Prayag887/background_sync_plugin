@@ -3,8 +3,6 @@ package com.prayag.flutter_workmanager_plugin.workmanager
 import android.content.Context
 import androidx.work.Worker
 import androidx.work.WorkerParameters
-import com.prayag.flutter_workmanager_plugin.database.DatabaseHelper
-
 class CopyUserDataWorker(appContext: Context, workerParams: WorkerParameters) : Worker(appContext, workerParams) {
 
     override fun doWork(): Result {
@@ -14,8 +12,12 @@ class CopyUserDataWorker(appContext: Context, workerParams: WorkerParameters) : 
         if (dbPath != null) {
             try {
                 // Perform the actual database copy operation
-                val dbHelper = DatabaseHelper(applicationContext)
-                dbHelper.copyUserDataToUsersCopy()
+//                val dbHelper = DatabaseHelper(applicationContext)
+//                dbHelper.copyUserDataToUsersCopy()
+
+                // hit api from here
+
+
                 return Result.success()
             } catch (e: Exception) {
                 return Result.failure()
