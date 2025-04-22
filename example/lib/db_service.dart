@@ -28,75 +28,121 @@ class DatabaseHelper {
   }
 
   Future _createDB(Database db, int version) async {
-    // Create users table
+    // First, create all tables
     await db.execute('''
-      CREATE TABLE users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        description TEXT,
-        address TEXT,
-        grade TEXT
-      )
-    ''');
+    CREATE TABLE lang_progress (
+      id INTEGER PRIMARY KEY,
+      remote_id INTEGER,
+      customer_id INTEGER,
+      object_id INTEGER,
+      language_id INTEGER,
+      listening_progress INTEGER,
+      speaking_progress INTEGER,
+      writing_progress INTEGER,
+      reading_progress INTEGER,
+      mixed_progress INTEGER,
+      group_name TEXT,
+      model_type TEXT,
+      model_id INTEGER,
+      created_at TEXT,
+      updated_at TEXT,
+      synced_at TEXT,
+      deleted_at TEXT,
+      extras TEXT
+    )
+  ''');
 
-    // Create users_copy table
     await db.execute('''
-      CREATE TABLE users_copy (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        description TEXT,
-        address TEXT,
-        grade TEXT,
-        sync_status INTEGER DEFAULT 0
-      )
-    ''');
+    CREATE TABLE lang_practices (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      remote_id INTEGER,
+      customer_id INTEGER,
+      native_language_id INTEGER,
+      language_id INTEGER,
+      practice_mode INTEGER,
+      start_at TEXT,
+      end_at TEXT,
+      extras TEXT,
+      created_at TEXT,
+      updated_at TEXT,
+      synced_at TEXT,
+      deleted_at TEXT,
+      submitted_at TEXT,
+      practice_group INTEGER
+    );
+  ''');
 
-    // Insert sample data
+    // Then, insert sample data after all tables are created
     await _insertSampleData(db);
   }
 
   Future<void> _insertSampleData(Database db) async {
-    final users = [
+    // Insert lang_progress sample data
+    final progressRecords = [
       {
-        'name': 'User A',
-        'description': 'Desc A',
-        'address': 'Address A',
-        'grade': 'A'
+        "id": 90231,
+        "remote_id": null,
+        "customer_id": 5,
+        "object_id": 75,
+        "language_id": 2,
+        "listening_progress": null,
+        "speaking_progress": 1,
+        "writing_progress": 1,
+        "reading_progress": null,
+        "mixed_progress": null,
+        "group_name": null,
+        "model_type": "App\\Models\\Language\\LangObject",
+        "model_id": 75,
+        "created_at": null,
+        "updated_at": "2025-04-20T16:50:14.205728",
+        "synced_at": null,
+        "deleted_at": null,
+        "extras": null
       },
       {
-        'name': 'User B',
-        'description': 'Desc B',
-        'address': 'Address B',
-        'grade': 'B'
-      },
-      {
-        'name': 'User C',
-        'description': 'Desc Y',
-        'address': 'Address Y',
-        'grade': 'Y'
-      },
-      {
-        'name': 'User D',
-        'description': 'Desc X',
-        'address': 'Address X',
-        'grade': 'X'
-      },
-      {
-        'name': 'User E',
-        'description': 'Desc Z',
-        'address': 'Address Z',
-        'grade': 'Z'
-      },
+        "id": 90779,
+        "remote_id": 14678,
+        "customer_id": 5,
+        "object_id": 50,
+        "language_id": 2,
+        "listening_progress": null,
+        "speaking_progress": null,
+        "writing_progress": 0,
+        "reading_progress": null,
+        "mixed_progress": null,
+        "group_name": null,
+        "model_type": "App\\Models\\Language\\LangObject",
+        "model_id": 50,
+        "created_at": "2025-04-20T12:19:11.536258",
+        "updated_at": "2025-04-20T16:49:27.316544",
+        "synced_at": null,
+        "deleted_at": null,
+        "extras": null
+      }
     ];
 
-    for (final user in users) {
-      await db.insert('users', user);
+    for (final record in progressRecords) {
+      await db.insert('lang_progress', record);
     }
-  }
 
-  Future<void> clearUserCopy() async {
-    final db = await database;
-    await db.delete('users_copy');
+    // Insert lang_practices sample data
+    await db.insert('lang_practices', {
+      "id": 15,
+      "remote_id": null,
+      "customer_id": 5,
+      "native_language_id": 1,
+      "language_id": 2,
+      "practice_mode": 3,
+      "start_at": "2025-04-20T16:42:13.537914",
+      "end_at": "2025-04-20T16:50:32.505996",
+      "extras": "{\"results\":{\"retry_attempts\":3,\"wrong_attempts\":1,\"total_questions\":10,\"correct_attempts\":1,\"skipped_attempts\":1,\"un_attempts\":7}}",
+      "created_at": "2025-04-20T16:42:13.537883",
+      "updated_at": "2025-04-20T16:42:13.537744",
+      "synced_at": null,
+      "deleted_at": null,
+      "submitted_at": "2025-04-20T16:50:32.297865",
+      "practice_group": 1
+    });
   }
 
   // Enhanced schema generation method
@@ -121,11 +167,10 @@ class DatabaseHelper {
 
       if (_shouldSkipTable(tableName)) continue;
 
-      // Safe access with null assertion operator (!) since we initialized it as non-null
-      schema['tables']![tableName] = await _getTableSchema(db, tableName, tableSql);
+      schema['tables']![tableName] =
+      await _getTableSchema(db, tableName, tableSql);
     }
 
-    // Handle views
     final List<Map<String, dynamic>> views = await db.rawQuery(
         "SELECT name, sql FROM sqlite_master WHERE type='view'"
     );
@@ -141,8 +186,7 @@ class DatabaseHelper {
   Future<Map<String, dynamic>> _getTableSchema(
       Database db,
       String tableName,
-      String? tableSql
-      ) async {
+      String? tableSql) async {
     return {
       'create_statement': tableSql,
       'columns': await db.rawQuery("PRAGMA table_info($tableName)"),
@@ -154,8 +198,7 @@ class DatabaseHelper {
 
   Future<List<Map<String, dynamic>>> _getIndexInfo(
       Database db,
-      String tableName
-      ) async {
+      String tableName) async {
     final indices = <Map<String, dynamic>>[];
     final indexList = await db.rawQuery("PRAGMA index_list($tableName)");
 
@@ -176,8 +219,7 @@ class DatabaseHelper {
 
   Future<List<Map<String, dynamic>>> _getTriggers(
       Database db,
-      String tableName
-      ) async {
+      String tableName) async {
     return await db.rawQuery(
         "SELECT name, sql FROM sqlite_master "
             "WHERE type='trigger' AND tbl_name='$tableName'"
@@ -197,7 +239,6 @@ class DatabaseHelper {
     return file;
   }
 
-  // Helper to print schema to console
   Future<void> printSchema() async {
     final schema = await getSchemaAsJson();
     if (kDebugMode) {

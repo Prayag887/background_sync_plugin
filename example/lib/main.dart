@@ -35,8 +35,8 @@ class _MainScreenState extends State<MainScreen> {
   final FlutterWorkmanagerPlugin _plugin = FlutterWorkmanagerPlugin();
   static const platform = MethodChannel('background_database_sync');
 
-  List<Map<String, dynamic>> users = [];
-  List<Map<String, dynamic>> usersCopy = [];
+  List<Map<String, dynamic>> langProgress = [];
+  List<Map<String, dynamic>> langPractices = [];  // Changed variable name
   String schemaJson = '';
   bool showSchema = false;
 
@@ -51,19 +51,23 @@ class _MainScreenState extends State<MainScreen> {
   Future<void> _startMonitoring() async {
     final dir = await getDatabasesPath();
     const dbName = 'app_database.db';
+    const dbQueryProgress = "SELECT name FROM sqlite_master WHERE type = 'table';";
+    const dbQueryPractice = "SELECT name FROM sqlite_master WHERE type = 'table';";
+    const dbQueryAttempt = "SELECT name FROM sqlite_master WHERE type = 'table';";
+    const dbQuerySuperSync = "SELECT name FROM sqlite_master WHERE type = 'table';";
 
     try {
       final files = Directory(dir).listSync(recursive: false, followLinks: false);
 
       if (files.isEmpty) {
-        debugPrint("Directory is empty: ${dir}");
+        debugPrint("Directory is empty: $dir");
       } else {
         for (final file in files) {
           debugPrint("File/Dir: ${file.path}");
         }
       }
 
-      await FlutterWorkmanagerPlugin.startMonitoring(dir, dbName);
+      await FlutterWorkmanagerPlugin.startMonitoring(dir, dbName, dbQueryProgress, dbQueryPractice, dbQueryAttempt, dbQuerySuperSync);
     } catch (e) {
       debugPrint('Error starting monitoring: $e');
     }
@@ -82,12 +86,12 @@ class _MainScreenState extends State<MainScreen> {
 
   Future<void> _loadData() async {
     final db = await DatabaseHelper.instance.database;
-    final usersResult = await db.query('users');
-    // final usersCopyResult = await db.query('users_copy');
+    final result = await db.query('lang_progress');
+    final practiceResult = await db.query('lang_practices');
 
     setState(() {
-      users = usersResult;
-      // usersCopy = usersCopyResult;
+      langProgress = result;
+      langPractices = practiceResult;
     });
   }
 
@@ -103,35 +107,39 @@ class _MainScreenState extends State<MainScreen> {
     SystemNavigator.pop();
   }
 
-  void _clearUserCopy() async {
-    try {
-      await DatabaseHelper.instance.clearUserCopy();
-      await _loadData();
-    } catch (e) {
-      debugPrint('Failed to clear user copy: $e');
-    }
-  }
-
   Widget _buildList(List<Map<String, dynamic>> data, String title) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          child: Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
         ),
         const SizedBox(height: 8),
         Expanded(
           child: ListView.builder(
             itemCount: data.length,
             itemBuilder: (_, index) {
-              final user = data[index];
+              final item = data[index];
               return Card(
+                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 child: ListTile(
-                  title: Text(user["name"] ?? ''),
-                  subtitle: Text(
-                      '${user["description"] ?? ''} | ${user["grade"] ?? ''}'),
-                  trailing: Text(user["address"] ?? ''),
+                  title: Text("ID: ${item["id"]}"),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text("Customer ID: ${item["customer_id"]}"),
+                      Text("Native Language ID: ${item["native_language_id"]}"),
+                      Text("Language ID: ${item["language_id"]}"),
+                      Text("Practice Mode: ${item["practice_mode"]}"),
+                      Text("Start At: ${item["start_at"]}"),
+                      Text("End At: ${item["end_at"]}"),
+                    ],
+                  ),
+                  trailing: Text("Group: ${item["practice_group"]}"),
                 ),
               );
             },
@@ -145,7 +153,7 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Database Sync Plugin UI'),
+        title: const Text('Language Progress Tracker'),
         backgroundColor: Colors.teal,
       ),
       body: showSchema
@@ -162,9 +170,9 @@ class _MainScreenState extends State<MainScreen> {
                 label: const Text("Close"),
               ),
               ElevatedButton.icon(
-                onPressed: _clearUserCopy,
-                icon: const Icon(Icons.delete),
-                label: const Text("Clear"),
+                onPressed: _loadData,
+                icon: const Icon(Icons.refresh),
+                label: const Text("Refresh"),
               ),
               ElevatedButton.icon(
                 onPressed: _generateSchemaInfo,
@@ -177,9 +185,9 @@ class _MainScreenState extends State<MainScreen> {
           Expanded(
             child: Row(
               children: [
-                Flexible(child: _buildList(users, "Users")),
+                Flexible(child: _buildList(langProgress, "Language Progress")),
                 const VerticalDivider(),
-                Flexible(child: _buildList(usersCopy, "Users Copy")),
+                Flexible(child: _buildList(langPractices, "Language Practices")),  // Updated to use langPractices
               ],
             ),
           ),
