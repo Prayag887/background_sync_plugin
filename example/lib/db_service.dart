@@ -88,7 +88,7 @@ class DatabaseHelper {
     await db.transaction((txn) async {
       final batch = txn.batch();
 
-      for (int i = 0; i < 500; i++) {
+      for (int i = 0; i < 1000; i++) {
         for (final user in users) {
           batch.insert('users', user);
         }

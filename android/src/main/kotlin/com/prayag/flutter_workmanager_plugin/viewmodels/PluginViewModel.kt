@@ -3,13 +3,15 @@ package com.prayag.flutter_workmanager_plugin.viewmodels
 import android.app.Activity
 import android.app.Application
 import android.content.Context
-import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.prayag.flutter_workmanager_plugin.data.DatabaseExtractor
-import com.prayag.flutter_workmanager_plugin.service.TaskMonitorService
+import com.prayag.flutter_workmanager_plugin.service.UserSyncWorker
 import io.flutter.plugin.common.MethodCall
+import java.util.concurrent.TimeUnit
 
 class PluginViewModel {
     private var dbPath: String? = null
@@ -48,13 +50,23 @@ class PluginViewModel {
     }
 
     fun startMonitoringService(context: Context) {
-        val intent = Intent(context, TaskMonitorService::class.java)
-        intent.putExtra("dbPath", dbPath)
-        intent.putExtra("dbName", dbName)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(intent)
-        } else {
-            context.startService(intent)
-        }
+        scheduleUserSyncWork(context)
+    }
+
+    private fun scheduleUserSyncWork(context: Context) {
+        // Cancel any existing sync work first
+        WorkManager.getInstance(context).cancelAllWorkByTag("user_sync_work")
+
+        val data = workDataOf(
+            "dbPath" to dbPath,
+            "dbName" to dbName
+        )
+
+        val syncWork = OneTimeWorkRequestBuilder<UserSyncWorker>()
+            .setInputData(data)
+            .addTag("user_sync_work")
+            .build()
+
+        WorkManager.getInstance(context).enqueue(syncWork)
     }
 }
