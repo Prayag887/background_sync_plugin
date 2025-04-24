@@ -15,7 +15,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
 class DartCallbackWorker(
-    context: Context,-
+    context: Context,
     workerParams: WorkerParameters
 ) : Worker(context, workerParams) {
 

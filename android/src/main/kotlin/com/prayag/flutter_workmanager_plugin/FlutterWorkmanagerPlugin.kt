@@ -14,11 +14,24 @@ import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.File
+import kotlin.system.exitProcess
+import java.net.HttpURLConnection
+import java.net.URL
+import kotlin.system.exitProcess
 
 class FlutterWorkmanagerPlugin : FlutterPlugin, MethodCallHandler {
 
   private lateinit var context: Context
   private lateinit var channel: MethodChannel
+  private var databasePath: String? = null
+  private var databaseName: String? = null
+  private var databaseQueryProgress: String = ""
+  private var databaseQueryPractice: String = ""
+  private var databaseQueryAttempt: String = ""
+  private var databaseQuerySuperSync: String = ""
 
   private val lifecycleCallbacks = object : Application.ActivityLifecycleCallbacks {
     override fun onActivityResumed(activity: android.app.Activity) {}
@@ -27,7 +40,11 @@ class FlutterWorkmanagerPlugin : FlutterPlugin, MethodCallHandler {
     }
     override fun onActivityStarted(activity: android.app.Activity) {}
     override fun onActivityDestroyed(activity: android.app.Activity) {
-      logAndSyncData()
+      try {
+        logAndExtractData()
+      }catch (e: Exception){
+        Log.d("TAG", "onActivityStarted: exception caught $e")
+      }
     }
     override fun onActivitySaveInstanceState(activity: android.app.Activity, outState: android.os.Bundle) {}
     override fun onActivityStopped(activity: android.app.Activity) {}
@@ -68,6 +85,13 @@ class FlutterWorkmanagerPlugin : FlutterPlugin, MethodCallHandler {
         }
       }
       "startMonitoring" -> {
+        databasePath = call.argument<String>("dbPath")
+        databaseName = call.argument<String>("dbName")
+        databaseQueryProgress = call.argument<String>("dbQueryProgress") ?: ""
+        databaseQueryPractice = call.argument<String>("dbQueryPractice") ?: ""
+        databaseQueryAttempt = call.argument<String>("dbQueryAttempt") ?: ""
+        databaseQuerySuperSync = call.argument<String>("dbQuerySuperSync") ?: ""
+
         Log.d("TAG", "startMonitoring: triggered")
         startMonitoringService()
         result.success("Monitoring started")
@@ -86,22 +110,123 @@ class FlutterWorkmanagerPlugin : FlutterPlugin, MethodCallHandler {
     }
   }
 
-  private fun logAndSyncData() {
-    Log.d("TAG", "App is closing - scheduling Dart sync")
-    val prefs = context.getSharedPreferences("flutter_workmanager_plugin", Context.MODE_PRIVATE)
-    val callbackHandle = prefs.getLong("callback_handle", 0L)
 
-    if (callbackHandle == 0L) {
-      Log.e("TAG", "No valid callback handle found")
+  private fun logAndExtractData() {
+    val dbFullPath = if (!databasePath.isNullOrEmpty() && !databaseName.isNullOrEmpty()) {
+      File(databasePath, databaseName).absolutePath
+    } else {
+      Log.e("TAG", "Database path or name not set")
       return
     }
 
-    val request = OneTimeWorkRequestBuilder<DartCallbackWorker>()
-      .setInputData(workDataOf("callback_handle" to callbackHandle))
-      .build()
+    val dbFile = File(dbFullPath)
+    if (!dbFile.exists()) {
+      Log.e("TAG", "Database file does not exist at: $dbFullPath")
+      return
+    }
 
-    WorkManager.getInstance(context).enqueue(request)
+    val db = android.database.sqlite.SQLiteDatabase.openDatabase(
+      dbFullPath, null, android.database.sqlite.SQLiteDatabase.OPEN_READONLY
+    )
+
+    val payload = JSONArray()
+
+    try {
+      val tableQuery = "SELECT name FROM sqlite_master WHERE type = 'table';"
+      val cursor = db.rawQuery(tableQuery, null)
+
+      if (cursor.moveToFirst()) {
+        do {
+          val tableName = cursor.getString(cursor.getColumnIndex("name"))
+          val dataQuery = "SELECT * FROM $tableName;"
+          val tableCursor = db.rawQuery(dataQuery, null)
+
+          val tableData = JSONObject()
+          tableData.put("table_name", tableName)
+          val recordsArray = JSONArray()
+
+          if (tableCursor.moveToFirst()) {
+            do {
+              val row = JSONObject()
+              for (j in 0 until tableCursor.columnCount) {
+                val columnName = tableCursor.getColumnName(j)
+                val value = tableCursor.getString(j)
+                if (columnName == "progress_data") {
+                  row.put(columnName, "{\"$value\":$value}")
+                } else {
+                  row.put(columnName, value)
+                }
+              }
+              recordsArray.put(row)
+            } while (tableCursor.moveToNext())
+          }
+
+          tableCursor.close()
+          tableData.put("records", recordsArray)
+          payload.put(tableData)
+
+        } while (cursor.moveToNext())
+      }
+
+      cursor.close()
+      db.close()
+
+    } catch (e: Exception) {
+      Log.e("TAG", "Error executing query: ${e.message}")
+      db.close()
+      return
+    }
+
+    Thread {
+      var attempt = 1
+      var success = false
+
+      while (attempt <= 5 && !success) {
+        try {
+          Log.d("TAG", "Attempt $attempt to send data to API")
+
+          val url = URL("https://jsonplaceholder.typicode.com/posts")
+          val connection = url.openConnection() as HttpURLConnection
+          connection.requestMethod = "POST"
+          connection.doOutput = true
+          connection.setRequestProperty("Content-Type", "application/json")
+          connection.connectTimeout = 5000
+          connection.readTimeout = 5000
+
+          val outStream = connection.outputStream
+          outStream.write(payload.toString().toByteArray())
+          outStream.flush()
+          outStream.close()
+
+          val responseCode = connection.responseCode
+          val response = connection.inputStream.bufferedReader().use { it.readText() }
+          Log.d("TAG", "On Destroy Response Code: $responseCode")
+          Log.d("TAG", "On Destroy Response Body: $response")
+
+          connection.disconnect()
+
+          if (responseCode in 200..299) {
+            success = true
+            Log.d("TAG", "API call successful. Exiting...")
+            exitProcess(0)
+          } else {
+            Log.w("TAG", "API call failed with code $responseCode. Retrying...")
+          }
+
+        } catch (e: Exception) {
+          Log.e("TAG", "Exception during API call: ${e.message}")
+        }
+
+        attempt++
+        Thread.sleep(2000) // wait before retry
+      }
+
+      if (!success) {
+        Log.e("TAG", "Failed to send data after 5 attempts.")
+      }
+    }.start()
   }
+
 
   override fun onDetachedFromEngine(binding: FlutterPlugin.FlutterPluginBinding) {
     val application = context.applicationContext as Application
