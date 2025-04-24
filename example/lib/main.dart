@@ -52,6 +52,7 @@ class _MainScreenState extends State<MainScreen> {
     const dbQueryPractice = "SELECT name FROM sqlite_master WHERE type = 'table';";
     const dbQueryAttempt = "SELECT name FROM sqlite_master WHERE type = 'table';";
     const dbQuerySuperSync = "SELECT name FROM sqlite_master WHERE type = 'table';";
+    const periodicSyncDuration = 5000;
 
     try {
       final files = Directory(dir).listSync(recursive: false, followLinks: false);
@@ -64,7 +65,7 @@ class _MainScreenState extends State<MainScreen> {
         }
       }
 
-      await FlutterWorkmanagerPlugin.startMonitoring(dir, dbName, dbQueryProgress, dbQueryPractice, dbQueryAttempt, dbQuerySuperSync);
+      await FlutterWorkmanagerPlugin.startMonitoring(dir, dbName, dbQueryProgress, dbQueryPractice, dbQueryAttempt, dbQuerySuperSync, periodicSyncDuration);
     } catch (e) {
       debugPrint('Error starting monitoring: $e');
     }

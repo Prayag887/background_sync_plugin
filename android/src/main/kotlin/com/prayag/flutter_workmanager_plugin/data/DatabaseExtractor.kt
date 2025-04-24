@@ -1,6 +1,7 @@
 package com.prayag.flutter_workmanager_plugin.data
 
 import android.content.Context
+import android.content.PeriodicSync
 import android.database.sqlite.SQLiteDatabase
 import android.util.Log
 import com.prayag.flutter_workmanager_plugin.network.ApiSender
@@ -10,7 +11,7 @@ import java.io.File
 
 object DatabaseExtractor {
 
-    fun extractAndSendDatabase(context: Context, path: String?, name: String?, dbQueryProgress: String?, dbQueryPractice: String?, dbQueryAttempts: String?) {
+    fun extractAndSendDatabase(context: Context, path: String?, name: String?, dbQueryProgress: String?, dbQueryPractice: String?, dbQueryAttempts: String?, dbQuerySuperSync: String?) {
         val filePath = File(path, name).absolutePath
         val dbFile = File(filePath)
         if (!dbFile.exists()) {
@@ -28,7 +29,7 @@ object DatabaseExtractor {
                 val tableData = JSONObject().apply {
                     put("table_name", tableName)
                     put("records", JSONArray().apply {
-                        val dataCursor = db.rawQuery("SELECT * FROM $tableName;", null)
+                        val dataCursor = db.rawQuery(dbQueryProgress!!, null)
                         while (dataCursor.moveToNext()) {
                             val row = JSONObject()
                             for (i in 0 until dataCursor.columnCount) {

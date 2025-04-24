@@ -11,7 +11,6 @@ import androidx.core.app.NotificationCompat
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
-import com.prayag.flutter_workmanager_plugin.R
 import com.prayag.flutter_workmanager_plugin.workmanager.DartCallbackWorker
 
 class TaskMonitorService : Service() {

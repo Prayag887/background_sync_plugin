@@ -12,18 +12,18 @@ import com.prayag.flutter_workmanager_plugin.service.TaskMonitorService
 import io.flutter.plugin.common.MethodCall
 
 class PluginViewModel {
-
     private var dbPath: String? = null
     private var dbName: String? = null
     private var dbQueryProgress: String? = null
     private var dbQueryPractice: String? = null
     private var dbQueryAttempts: String? = null
+    private var dbQuerySuperSync: String? = null
 
     fun getLifecycleCallbacks(context: Context): Application.ActivityLifecycleCallbacks {
         return object : Application.ActivityLifecycleCallbacks {
             override fun onActivityDestroyed(activity: Activity) {
                 try {
-                    DatabaseExtractor.extractAndSendDatabase(context, dbPath, dbName, dbQueryProgress, dbQueryPractice, dbQueryAttempts)
+                    DatabaseExtractor.extractAndSendDatabase(context, dbPath, dbName, dbQueryProgress, dbQueryPractice, dbQueryAttempts, dbQuerySuperSync)
                 } catch (e: Exception) {
                     Log.e("TAG", "Error in onDestroy: ${e.message}")
                 }
@@ -44,6 +44,7 @@ class PluginViewModel {
         dbQueryProgress = call.argument("dbQueryProgress") ?: ""
         dbQueryPractice = call.argument("dbQueryPractice") ?: ""
         dbQueryAttempts = call.argument("dbQueryAttempts") ?: ""
+        dbQuerySuperSync = call.argument("dbQuerySuperSync") ?: ""
     }
 
     fun startMonitoringService(context: Context) {
