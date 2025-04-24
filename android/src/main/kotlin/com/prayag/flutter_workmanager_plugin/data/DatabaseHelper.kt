@@ -1,4 +1,4 @@
-package com.prayag.flutter_workmanager_plugin.database
+package com.prayag.flutter_workmanager_plugin.data
 
 import android.annotation.SuppressLint
 import android.content.ContentValues
