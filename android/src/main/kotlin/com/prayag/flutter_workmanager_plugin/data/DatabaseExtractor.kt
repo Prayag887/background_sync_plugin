@@ -25,7 +25,8 @@ object DatabaseExtractor {
         try {
             val cursor = db.rawQuery(dbQueryProgress!!, null)
             while (cursor.moveToNext()) {
-                val tableName = cursor.getString(cursor.getColumnIndex("name"))
+                val columnIndex = cursor.getColumnIndex("name")
+                val tableName = if (columnIndex >= 0) cursor.getString(columnIndex) else "unknown"
                 val tableData = JSONObject().apply {
                     put("table_name", tableName)
                     put("records", JSONArray().apply {

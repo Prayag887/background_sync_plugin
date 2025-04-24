@@ -57,42 +57,49 @@ class DatabaseHelper {
 
   Future<void> _insertSampleData(Database db) async {
     final users = [
-      {
-        'name': 'User A',
-        'description': 'Desc A',
-        'address': 'Address A',
-        'grade': 'A'
-      },
-      {
-        'name': 'User B',
-        'description': 'Desc B',
-        'address': 'Address B',
-        'grade': 'B'
-      },
-      {
-        'name': 'User C',
-        'description': 'Desc Y',
-        'address': 'Address Y',
-        'grade': 'Y'
-      },
-      {
-        'name': 'User D',
-        'description': 'Desc X',
-        'address': 'Address X',
-        'grade': 'X'
-      },
-      {
-        'name': 'User E',
-        'description': 'Desc Z',
-        'address': 'Address Z',
-        'grade': 'Z'
-      },
+      {'name': 'User A', 'description': 'Desc A', 'address': 'Address A', 'grade': 'A'},
+      {'name': 'User B', 'description': 'Desc B', 'address': 'Address B', 'grade': 'B'},
+      {'name': 'User C', 'description': 'Desc Y', 'address': 'Address Y', 'grade': 'Y'},
+      {'name': 'User D', 'description': 'Desc X', 'address': 'Address X', 'grade': 'X'},
+      {'name': 'User E', 'description': 'Desc Z', 'address': 'Address Z', 'grade': 'Z'},
+      {'name': 'User F', 'description': 'Desc Z', 'address': 'Address Z', 'grade': 'Z'},
+      {'name': 'User G', 'description': 'Desc Z', 'address': 'Address Z', 'grade': 'Z'},
+      {'name': 'User H', 'description': 'Desc Z', 'address': 'Address Z', 'grade': 'Z'},
+      {'name': 'User I', 'description': 'Desc Z', 'address': 'Address Z', 'grade': 'Z'},
+      {'name': 'User J', 'description': 'Desc Z', 'address': 'Address Z', 'grade': 'Z'},
+      {'name': 'User K', 'description': 'Desc Z', 'address': 'Address Z', 'grade': 'Z'},
+      {'name': 'User L', 'description': 'Desc Z', 'address': 'Address Z', 'grade': 'Z'},
+      {'name': 'User M', 'description': 'Desc Z', 'address': 'Address Z', 'grade': 'Z'},
+      {'name': 'User n', 'description': 'Desc Z', 'address': 'Address Z', 'grade': 'Z'},
+      {'name': 'User o', 'description': 'Desc Z', 'address': 'Address Z', 'grade': 'Z'},
+      {'name': 'User p', 'description': 'Desc Z', 'address': 'Address Z', 'grade': 'Z'},
+      {'name': 'User q', 'description': 'Desc Z', 'address': 'Address Z', 'grade': 'Z'},
+      {'name': 'User r', 'description': 'Desc Z', 'address': 'Address Z', 'grade': 'Z'},
+      {'name': 'User s', 'description': 'Desc Z', 'address': 'Address Z', 'grade': 'Z'},
+      {'name': 'User t', 'description': 'Desc Z', 'address': 'Address Z', 'grade': 'Z'},
+      {'name': 'User u', 'description': 'Desc Z', 'address': 'Address Z', 'grade': 'Z'},
+      {'name': 'User v', 'description': 'Desc Z', 'address': 'Address Z', 'grade': 'Z'},
+      {'name': 'User w', 'description': 'Desc Z', 'address': 'Address Z', 'grade': 'Z'},
+      {'name': 'User x', 'description': 'Desc Z', 'address': 'Address Z', 'grade': 'Z'},
+      {'name': 'User y', 'description': 'Desc Z', 'address': 'Address Z', 'grade': 'Z'},
+      {'name': 'User z', 'description': 'Desc Z', 'address': 'Address Z', 'grade': 'Z'},
     ];
 
-    for (final user in users) {
-      await db.insert('users', user);
-    }
+    await db.transaction((txn) async {
+      final batch = txn.batch();
+
+      for (int i = 0; i < 500; i++) {
+        for (final user in users) {
+          batch.insert('users', user);
+        }
+      }
+
+      // Execute all insertions in one go
+      await batch.commit();
+    });
   }
+
+
 
   Future<void> clearUserCopy() async {
     final db = await database;

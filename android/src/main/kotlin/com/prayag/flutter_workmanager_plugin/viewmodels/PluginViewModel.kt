@@ -49,6 +49,8 @@ class PluginViewModel {
 
     fun startMonitoringService(context: Context) {
         val intent = Intent(context, TaskMonitorService::class.java)
+        intent.putExtra("dbPath", dbPath)
+        intent.putExtra("dbName", dbName)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             context.startForegroundService(intent)
         } else {
