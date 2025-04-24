@@ -46,8 +46,25 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Future<void> _startMonitoring() async {
+    final dir = await getDatabasesPath();
+    const dbName = 'app_database.db';
+    const dbQueryProgress = "SELECT name FROM sqlite_master WHERE type = 'table';";
+    const dbQueryPractice = "SELECT name FROM sqlite_master WHERE type = 'table';";
+    const dbQueryAttempt = "SELECT name FROM sqlite_master WHERE type = 'table';";
+    const dbQuerySuperSync = "SELECT name FROM sqlite_master WHERE type = 'table';";
+
     try {
-      await FlutterWorkmanagerPlugin.startMonitoring();
+      final files = Directory(dir).listSync(recursive: false, followLinks: false);
+
+      if (files.isEmpty) {
+        debugPrint("Directory is empty: $dir");
+      } else {
+        for (final file in files) {
+          debugPrint("File/Dir: ${file.path}");
+        }
+      }
+
+      await FlutterWorkmanagerPlugin.startMonitoring(dir, dbName, dbQueryProgress, dbQueryPractice, dbQueryAttempt, dbQuerySuperSync);
     } catch (e) {
       debugPrint('Error starting monitoring: $e');
     }
@@ -136,7 +153,7 @@ class _MainScreenState extends State<MainScreen> {
               ElevatedButton.icon(
                 onPressed: _clearUserCopy,
                 icon: const Icon(Icons.delete),
-                label: const Text("Clear Copy"),
+                label: const Text("Clear"),
               ),
               ElevatedButton.icon(
                 onPressed: _generateSchemaInfo,
