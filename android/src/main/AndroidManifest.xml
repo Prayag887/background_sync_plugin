@@ -11,10 +11,10 @@
 
     <application>
         <!-- Service for background data sync -->
-<!--        <service-->
-<!--            android:name=".service.TaskMonitorService"-->
-<!--            android:stopWithTask="false"-->
-<!--            android:foregroundServiceType="specialUse" />-->
+        <service
+            android:name=".service.TaskMonitorService"
+            android:stopWithTask="false"
+            android:foregroundServiceType="specialUse" />
     </application>
 
 </manifest>

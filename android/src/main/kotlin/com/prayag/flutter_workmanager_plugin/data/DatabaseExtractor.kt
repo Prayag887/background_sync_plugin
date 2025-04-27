@@ -30,7 +30,7 @@ object DatabaseExtractor {
                 val tableData = JSONObject().apply {
                     put("table_name", tableName)
                     put("records", JSONArray().apply {
-                        val dataCursor = db.rawQuery(dbQueryProgress!!, null)
+                        val dataCursor = db.rawQuery(dbQueryProgress, null)
                         while (dataCursor.moveToNext()) {
                             val row = JSONObject()
                             for (i in 0 until dataCursor.columnCount) {
