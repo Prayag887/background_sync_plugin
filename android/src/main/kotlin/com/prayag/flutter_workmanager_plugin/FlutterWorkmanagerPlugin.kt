@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
-import com.prayag.flutter_workmanager_plugin.service.TaskMonitorService
 import com.prayag.flutter_workmanager_plugin.viewmodels.PluginViewModel
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.plugin.common.MethodCall

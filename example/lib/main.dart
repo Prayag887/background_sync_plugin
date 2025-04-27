@@ -1,10 +1,10 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_workmanager_plugin/flutter_workmanager_plugin.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
 
 import 'db_service.dart';
 
@@ -33,54 +33,63 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   final FlutterWorkmanagerPlugin _plugin = FlutterWorkmanagerPlugin();
+  final ValueNotifier<List<Map<String, dynamic>>> usersCopyNotifier = ValueNotifier([]);
   List<Map<String, dynamic>> users = [];
-  List<Map<String, dynamic>> usersCopy = [];
   String schemaJson = '';
   bool showSchema = false;
+  bool isLoading = true;
+  Timer? _pollingTimer;
 
   @override
   void initState() {
     super.initState();
     _startMonitoring();
     _loadData();
+    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) => _loadData());
+  }
+
+  @override
+  void dispose() {
+    _pollingTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _startMonitoring() async {
     final dir = await getDatabasesPath();
     const dbName = 'app_database.db';
-    const dbQueryProgress = "SELECT name FROM sqlite_master WHERE type = 'table';";
-    const dbQueryPractice = "SELECT name FROM sqlite_master WHERE type = 'table';";
-    const dbQueryAttempt = "SELECT name FROM sqlite_master WHERE type = 'table';";
-    const dbQuerySuperSync = "SELECT name FROM sqlite_master WHERE type = 'table';";
+    const dbQuery = "SELECT name FROM sqlite_master WHERE type = 'table';";
+    const periodicSyncDuration = 5000;
 
     try {
       final files = Directory(dir).listSync(recursive: false, followLinks: false);
-
-      if (files.isEmpty) {
-        debugPrint("Directory is empty: $dir");
-      } else {
-        for (final file in files) {
-          debugPrint("File/Dir: ${file.path}");
-        }
+      for (final file in files) {
+        debugPrint("File/Dir: ${file.path}");
       }
 
-      await FlutterWorkmanagerPlugin.startMonitoring(dir, dbName, dbQueryProgress, dbQueryPractice, dbQueryAttempt, dbQuerySuperSync);
+      await FlutterWorkmanagerPlugin.startMonitoring(
+        dir,
+        dbName,
+        dbQuery,
+        dbQuery,
+        dbQuery,
+        dbQuery,
+        periodicSyncDuration,
+      );
     } catch (e) {
       debugPrint('Error starting monitoring: $e');
     }
   }
 
   Future<void> _loadData() async {
-    // Load from SQLite database
     final db = await DatabaseHelper.instance.database;
-
     final usersResult = await db.query('users');
     final usersCopyResult = await db.query('users_copy');
 
     setState(() {
       users = usersResult;
-      usersCopy = usersCopyResult;
+      isLoading = false;
     });
+    usersCopyNotifier.value = usersCopyResult;
   }
 
   Future<void> _generateSchemaInfo() async {
@@ -98,7 +107,7 @@ class _MainScreenState extends State<MainScreen> {
   void _clearUserCopy() async {
     try {
       await DatabaseHelper.instance.clearUserCopy();
-      await _loadData(); // reload UI
+      await _loadData();
     } catch (e) {
       debugPrint('Failed to clear user copy: $e');
     }
@@ -108,8 +117,7 @@ class _MainScreenState extends State<MainScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
         const SizedBox(height: 8),
         Expanded(
           child: ListView.builder(
@@ -126,6 +134,89 @@ class _MainScreenState extends State<MainScreen> {
             },
           ),
         )
+      ],
+    );
+  }
+
+  Widget _buildUsersCopyList() {
+    return ValueListenableBuilder<List<Map<String, dynamic>>>(
+      valueListenable: usersCopyNotifier,
+      builder: (context, data, _) {
+        if (isLoading || data.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text("Users Copy", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const SizedBox(height: 8),
+            Expanded(
+              child: ListView.builder(
+                itemCount: data.length,
+                itemBuilder: (_, index) {
+                  final user = data[index];
+                  return Card(
+                    child: ListTile(
+                      title: Text(user["name"] ?? ''),
+                      subtitle: Text('${user["description"] ?? ''} | ${user["grade"] ?? ''}'),
+                      trailing: Text(user["address"] ?? ''),
+                    ),
+                  );
+                },
+              ),
+            )
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildSchemaView() {
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text('Database Schema (JSON)'),
+            ),
+            IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () => setState(() => showSchema = false),
+            ),
+          ],
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: schemaJson));
+                  },
+                  icon: const Icon(Icons.copy),
+                  label: const Text('Copy to Clipboard'),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    schemaJson,
+                    style: const TextStyle(fontFamily: 'monospace'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -168,71 +259,12 @@ class _MainScreenState extends State<MainScreen> {
               children: [
                 Flexible(child: _buildList(users, "Users")),
                 const VerticalDivider(),
-                Flexible(child: _buildList(usersCopy, "Users Copy")),
+                Flexible(child: _buildUsersCopyList()),
               ],
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSchemaView() {
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                'Database Schema (JSON)',
-                // style: Theme.of(context).textTheme.titleLarge,
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: () => setState(() => showSchema = false),
-            ),
-          ],
-        ),
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Clipboard.setData(ClipboardData(text: schemaJson));
-                        // ScaffoldMessenger.of(context).showSnackBar(
-                        //     const SnackBar(content: Text('Schema copied to clipboard'))
-                        // );
-                      },
-                      icon: const Icon(Icons.copy),
-                      label: const Text('Copy to Clipboard'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    schemaJson,
-                    style: const TextStyle(fontFamily: 'monospace'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

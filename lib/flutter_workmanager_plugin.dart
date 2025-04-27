@@ -8,7 +8,7 @@ class FlutterWorkmanagerPlugin {
     await _channel.invokeMethod('startSync', {'dbPath': dbPath});
   }
 
-  static Future<void> startMonitoring(String dbPath, String dbName, String dbQueryProgress, String dbQueryPractice,  String dbQueryAttempt, String dbQuerySuperSync) async {
+  static Future<void> startMonitoring(String dbPath, String dbName, String dbQueryProgress, String dbQueryPractice,  String dbQueryAttempt, String dbQuerySuperSync, int periodicSyncDuration) async {
     await _channel.invokeMethod('startMonitoring', {
       'dbPath': dbPath,
       'dbName': dbName,
@@ -16,6 +16,7 @@ class FlutterWorkmanagerPlugin {
       'dbQueryPractice': dbQueryPractice,
       'dbQueryAttempt': dbQueryAttempt,
       'dbQuerySuperSync': dbQuerySuperSync,
+      'periodicSyncDuration' : periodicSyncDuration
     });
   }
 
