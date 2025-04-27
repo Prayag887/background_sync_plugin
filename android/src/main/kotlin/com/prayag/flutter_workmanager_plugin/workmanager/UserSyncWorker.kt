@@ -1,4 +1,4 @@
-package com.prayag.flutter_workmanager_plugin.service
+package com.prayag.flutter_workmanager_plugin.workmanager
 
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
@@ -17,6 +17,10 @@ import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.TimeUnit
+
+
+// this is for periodic data sync when the application is still open. Change  .setInitialDelay(1, TimeUnit.MINUTES) for the
+// timed sync. Periodic sync cant be done in rapid succession so one time sync is being re-triggered here
 
 class UserSyncWorker(
     private val context: Context,
@@ -99,7 +103,7 @@ class UserSyncWorker(
 
         val nextWork = OneTimeWorkRequestBuilder<UserSyncWorker>()
             .setInputData(data)
-            .setInitialDelay(15, TimeUnit.SECONDS)
+            .setInitialDelay(1, TimeUnit.MINUTES)
             .addTag("user_sync_work")
             .build()
 
