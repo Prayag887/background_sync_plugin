@@ -37,7 +37,7 @@ class UserSyncWorker(
 
         val db = SQLiteDatabase.openDatabase(filePath, null, SQLiteDatabase.OPEN_READWRITE)
         try {
-            val batchSize = 1000
+            val batchSize = 5000
             var offset = 0
 
             while (true) {

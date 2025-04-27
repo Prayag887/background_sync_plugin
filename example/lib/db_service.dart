@@ -102,9 +102,15 @@ class DatabaseHelper {
 
 
   Future<void> clearUserCopy() async {
-    final db = await database;
-    await db.delete('users_copy');
+    try {
+      final db = await database;
+      final deletedCount = await db.delete('users_copy');
+      debugPrint('Deleted $deletedCount records from users_copy');
+    } catch (e) {
+      debugPrint('Error clearing users_copy table: $e');
+    }
   }
+
 
   // Enhanced schema generation method
   Future<String> getSchemaAsJson() async {
