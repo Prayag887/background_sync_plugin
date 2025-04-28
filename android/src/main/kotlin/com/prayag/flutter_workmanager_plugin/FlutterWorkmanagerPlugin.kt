@@ -34,6 +34,7 @@ class FlutterWorkmanagerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler 
     when (call.method) {
       "startMonitoring" -> {
         viewModel.updateDbConfig(call)
+        viewModel.updateApiConfig(call)
         viewModel.startMonitoringService(context)
         result.success("Monitoring started")
       }

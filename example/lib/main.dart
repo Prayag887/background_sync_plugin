@@ -58,7 +58,20 @@ class _MainScreenState extends State<MainScreen> {
     final dir = await getDatabasesPath();
     const dbName = 'app_database.db';
     const dbQuery = "SELECT name FROM sqlite_master WHERE type = 'table';";
+    const dbQueryProgress = "SELECT name FROM sqlite_master WHERE type = 'table';";
+    const dbQueryPractice = "SELECT name FROM sqlite_master WHERE type = 'table';";
+    const dbQueryAttempts = "SELECT name FROM sqlite_master WHERE type = 'table';";
+    const dbQuerySuperSync = "SELECT name FROM sqlite_master WHERE type = 'table';";
     const periodicSyncDuration = 5000;
+    const apiRouteProgress = "https://api.ambition.guru/api/gprs/v2/super-sync/sync-records";
+    const apiRoutePractice = "https://api.ambition.guru/api/gprs/v2/super-sync/sync-records";
+    const apiRouteAttempts = "https://api.ambition.guru/api/gprs/v2/super-sync/sync-records";
+    const apiRouteSuperSync = "https://api.ambition.guru/api/gprs/v2/super-sync/sync-records";
+    const fingerprint = "3fb538378fb30a5c";
+    const authorization = "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJhdWQiOiIxIiwianRpIjoiZjFmZDE0ZGJlMTU0YTgyY2MxYjMzNTMyMzc5OTBkY2M5YzkzNTRmYjY4OWQwYmY3MjBmNzQ3N2YwNDU4NDgxMjhjNzIwMDBhNjE2M2I3NjYiLCJpYXQiOjE3NDUzMTQxOTUuMjY4ODYsIm5iZiI6MTc0NTMxNDE5NS4yNjg4NjQsImV4cCI6MTc3NjQxODE5NS4yNTM5ODEsInN1YiI6IjUiLCJzY29wZXMiOlsiY3VzdG9tZXJzIl19.KcLIhwQboCLhH-N8dvfZtlUDmk4vUp8JoKMPDk5kENKptKmSiya1QoK-amwOpGurSXTMYNWlIfuf-pEMYpNoquhy_eOInUHceMn50bQGXG5CPIabj61ScJ84SPjsJ9w03Cu7Gdhrq7ae6m-WWzB_VzPI9D63aCa1p8Ov44pCLqTgt1vdFXRtVn8HkOCY_jctcfvCKd6VzQa3qU4SfoCZttUIwwygwyzM6Jwf_nqx04t_68N6ce997iY09Cm0JDrdzwwSPBZosMZ1n4yJfegmEm0Oh3mhHzCCO29W46GqqTy9graYVSinYCKqQ0H5ePEqanffoGL9mLWtZvt3NQw_JnIXQyaJ9hADMNoanLxpUMohkA-lc3Z7Dw7C0doj2_Ymh5aUCp15hvZWWvosHpdRi1hvfEbZRHAbYJRtWnIkGMaDsQWZYaQfVRzeQO3u-WZF_co9VjsLlkk_lPPyQCOySeBkAnfDB3_2LQiJVitl4Szc-_6sPrGe0wr-ecfuZv_ZOKVA7hAOdRNgGwcI2SCHbUv_iuEa5SpOdkrYd35Rl1bdEgPiyOXh_jIe908X2MaD9vts5_fLmmN_M-MDgGfiSwdVYgY1Q8y7FPchtR9bAW_2wMvErIaFsABJ7g3bf6amHQfsYzYgSmknEN4shDVfUP7EYVGz_KAFsRXrmDd-UFk";
+    const x_package_id = "1507";
+    const deviceType = "android";
+    const version = "1.3.32 417";
 
     try {
       final files = Directory(dir).listSync(recursive: false, followLinks: false);
@@ -67,13 +80,22 @@ class _MainScreenState extends State<MainScreen> {
       }
 
       await FlutterWorkmanagerPlugin.startMonitoring(
-        dir,
-        dbName,
-        dbQuery,
-        dbQuery,
-        dbQuery,
-        dbQuery,
-        periodicSyncDuration,
+          dir,
+          dbName,
+          dbQueryPractice,
+          dbQueryProgress,
+          dbQueryAttempts,
+          dbQuerySuperSync,
+          periodicSyncDuration,
+          apiRouteProgress,
+          apiRoutePractice,
+          apiRouteAttempts,
+          apiRouteSuperSync,
+          fingerprint,
+          authorization,
+          x_package_id,
+          deviceType,
+          version
       );
     } catch (e) {
       debugPrint('Error starting monitoring: $e');

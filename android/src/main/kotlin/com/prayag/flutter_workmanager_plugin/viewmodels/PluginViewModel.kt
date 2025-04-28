@@ -23,6 +23,16 @@ class PluginViewModel {
     private var dbQueryAttempts: String? = null
     private var dbQuerySuperSync: String? = null
 
+    private var apiRouteProgress: String? = null
+    private var apiRoutePractice: String? = null
+    private var apiRouteAttempts: String? = null
+    private var apiRouteSuperSync: String? = null
+    private var fingerprint: String? = null
+    private var authorization: String? = null
+    private var x_package_id: String? = null
+    private var deviceType: String? = null
+    private var version: String? = null
+
     fun getLifecycleCallbacks(context: Context): Application.ActivityLifecycleCallbacks {
         return object : Application.ActivityLifecycleCallbacks {
             override fun onActivityDestroyed(activity: Activity) {
@@ -30,8 +40,25 @@ class PluginViewModel {
                     DatabaseExtractor.extractAndSendDatabase(context, dbPath, dbName, dbQueryProgress, dbQueryPractice, dbQueryAttempts, dbQuerySuperSync)
 
                     val intent = Intent(context, TaskMonitorService::class.java)
+                    // database details and queries
                     intent.putExtra("dbPath", dbPath)
                     intent.putExtra("dbName", dbName)
+                    intent.putExtra("dbQueryProgress", dbQueryProgress)
+                    intent.putExtra("apiRoutePractice", apiRoutePractice)
+                    intent.putExtra("dbQueryAttempts", dbQueryAttempts)
+                    intent.putExtra("dbQuerySuperSync", dbQuerySuperSync)
+
+                    // api routes and post credentials
+                    intent.putExtra("apiRouteProgress", apiRouteProgress)
+                    intent.putExtra("apiRoutePractice", apiRoutePractice)
+                    intent.putExtra("apiRouteAttempts", apiRouteAttempts)
+                    intent.putExtra("apiRouteSuperSync", apiRouteSuperSync)
+                    intent.putExtra("fingerprint", fingerprint)
+                    intent.putExtra("authorization", authorization)
+                    intent.putExtra("x_package_id", x_package_id)
+                    intent.putExtra("deviceType", deviceType)
+                    intent.putExtra("version", version)
+
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         context.startForegroundService(intent)
                     } else {
@@ -60,6 +87,18 @@ class PluginViewModel {
         dbQuerySuperSync = call.argument("dbQuerySuperSync") ?: ""
     }
 
+    fun updateApiConfig(call: MethodCall) {
+        apiRouteProgress = call.argument("apiRouteProgress") ?: ""
+        apiRoutePractice = call.argument("apiRoutePractice") ?: ""
+        apiRouteAttempts= call.argument("apiRouteAttempts") ?: ""
+        apiRouteSuperSync = call.argument("apiRouteSuperSync") ?: ""
+        fingerprint = call.argument("fingerprint") ?: ""
+        authorization = call.argument("authorization") ?: ""
+        x_package_id = call.argument("x_package_id") ?: ""
+        deviceType = call.argument("deviceType") ?: ""
+        version = call.argument("version") ?: ""
+    }
+
     fun startMonitoringService(context: Context) {
         scheduleUserSyncWork(context)
     }
@@ -69,8 +108,26 @@ class PluginViewModel {
         WorkManager.getInstance(context).cancelAllWorkByTag("user_sync_work")
 
         val data = workDataOf(
+
+            // database paths and queries
             "dbPath" to dbPath,
-            "dbName" to dbName
+            "dbName" to dbName,
+            "dbQueryProgress" to dbQueryProgress,
+            "dbQueryPractice" to  dbQueryPractice,
+            "dbQueryAttempts" to dbQueryAttempts,
+            "dbQuerySuperSync" to dbQuerySuperSync,
+
+
+            // api routes and credentials for api posting:
+            "apiRouteProgress" to apiRouteProgress,
+            "apiRoutePractice" to apiRoutePractice,
+            "apiRouteAttempts" to apiRouteAttempts,
+            "apiRouteSuperSync" to apiRouteSuperSync,
+            "fingerprint" to fingerprint,
+            "authorization" to authorization,
+            "x_package_id" to x_package_id,
+            "deviceType" to  deviceType,
+            "version" to version
         )
 
         val syncWork = OneTimeWorkRequestBuilder<UserSyncWorker>()
