@@ -34,6 +34,12 @@ class UserSyncWorker(
         val dbQueryAttempts = inputData.getString("dbQueryAttempts") ?: return@withContext Result.failure()
         val dbQuerySuperSync = inputData.getString("dbQuerySuperSync") ?: return@withContext Result.failure()
 
+        // DB insert queries
+        val dbInsertQueryProgress = inputData.getString("dbInsertQueryProgress") ?: return@withContext Result.failure()
+        val dbInsertQueryPractice = inputData.getString("dbInsertQueryPractice") ?: return@withContext Result.failure()
+        val dbInsertQueryAttempts = inputData.getString("dbInsertQueryAttempts") ?: return@withContext Result.failure()
+        val dbInsertQuerySuperSync = inputData.getString("dbInsertQuerySuperSync") ?: return@withContext Result.failure()
+
         // API endpoints
         val apiRouteProgress = inputData.getString("apiRouteProgress") ?: return@withContext Result.failure()
         val apiRoutePractice = inputData.getString("apiRoutePractice") ?: return@withContext Result.failure()
@@ -164,6 +170,13 @@ class UserSyncWorker(
             "dbQueryPractice" to inputData.getString("dbQueryPractice"),
             "dbQueryAttempts" to inputData.getString("dbQueryAttempts"),
             "dbQuerySuperSync" to inputData.getString("dbQuerySuperSync"),
+
+            // db insert queries
+            "dbInsertQueryProgress" to inputData.getString("dbQueryProgress"),
+            "dbInsertQueryPractice" to inputData.getString("dbQueryPractice"),
+            "dbInsertQueryAttempts" to inputData.getString("dbQueryAttempts"),
+            "dbInsertQuerySuperSync" to inputData.getString("dbQuerySuperSync"),
+
             "apiRouteProgress" to inputData.getString("apiRouteProgress"),
             "apiRoutePractice" to inputData.getString("apiRoutePractice"),
             "apiRouteAttempts" to inputData.getString("apiRouteAttempts"),
