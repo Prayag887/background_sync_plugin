@@ -33,8 +33,8 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   final FlutterWorkmanagerPlugin _plugin = FlutterWorkmanagerPlugin();
-  final ValueNotifier<List<Map<String, dynamic>>> usersCopyNotifier = ValueNotifier([]);
-  List<Map<String, dynamic>> users = [];
+  final ValueNotifier<List<Map<String, dynamic>>> progressNotifier = ValueNotifier([]);
+  List<Map<String, dynamic>> progressRecords = [];
   String schemaJson = '';
   bool showSchema = false;
   bool isLoading = true;
@@ -57,11 +57,10 @@ class _MainScreenState extends State<MainScreen> {
   Future<void> _startMonitoring() async {
     final dir = await getDatabasesPath();
     const dbName = 'app_database.db';
-    const dbQuery = "SELECT name FROM sqlite_master WHERE type = 'table';";
-    const dbQueryProgress = "SELECT name FROM sqlite_master WHERE type = 'table';";
-    const dbQueryPractice = "SELECT name FROM sqlite_master WHERE type = 'table';";
-    const dbQueryAttempts = "SELECT name FROM sqlite_master WHERE type = 'table';";
-    const dbQuerySuperSync = "SELECT name FROM sqlite_master WHERE type = 'table';";
+    const dbQueryProgress = "SELECT * FROM lang_progress";
+    const dbQueryPractice = "SELECT * FROM lang_progress";
+    const dbQueryAttempts = "SELECT * FROM lang_progress";
+    const dbQuerySuperSync = "SELECT * FROM lang_progress";
     const periodicSyncDuration = 5000;
     const apiRouteProgress = "https://api.ambition.guru/api/gprs/v2/super-sync/sync-records";
     const apiRoutePractice = "https://api.ambition.guru/api/gprs/v2/super-sync/sync-records";
@@ -80,22 +79,22 @@ class _MainScreenState extends State<MainScreen> {
       }
 
       await FlutterWorkmanagerPlugin.startMonitoring(
-          dir,
-          dbName,
-          dbQueryPractice,
-          dbQueryProgress,
-          dbQueryAttempts,
-          dbQuerySuperSync,
-          periodicSyncDuration,
-          apiRouteProgress,
-          apiRoutePractice,
-          apiRouteAttempts,
-          apiRouteSuperSync,
-          fingerprint,
-          authorization,
-          x_package_id,
-          deviceType,
-          version
+        dir,
+        dbName,
+        dbQueryProgress,
+        dbQueryPractice,
+        dbQueryAttempts,
+        dbQuerySuperSync,
+        periodicSyncDuration,
+        apiRouteProgress,
+        apiRoutePractice,
+        apiRouteAttempts,
+        apiRouteSuperSync,
+        fingerprint,
+        authorization,
+        x_package_id,
+        deviceType,
+        version,
       );
     } catch (e) {
       debugPrint('Error starting monitoring: $e');
@@ -104,14 +103,13 @@ class _MainScreenState extends State<MainScreen> {
 
   Future<void> _loadData() async {
     final db = await DatabaseHelper.instance.database;
-    final usersResult = await db.query('users');
-    final usersCopyResult = await db.query('users_copy');
+    final progressResult = await db.query('lang_progress');
 
     setState(() {
-      users = usersResult;
+      progressRecords = progressResult;
       isLoading = false;
     });
-    usersCopyNotifier.value = usersCopyResult;
+    progressNotifier.value = progressResult;
   }
 
   Future<void> _generateSchemaInfo() async {
@@ -126,15 +124,6 @@ class _MainScreenState extends State<MainScreen> {
     SystemNavigator.pop();
   }
 
-  void _clearUserCopy() async {
-    try {
-      await DatabaseHelper.instance.clearUserCopy();
-      await _loadData();
-    } catch (e) {
-      debugPrint('Failed to clear user copy: $e');
-    }
-  }
-
   Widget _buildList(List<Map<String, dynamic>> data, String title) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -145,12 +134,12 @@ class _MainScreenState extends State<MainScreen> {
           child: ListView.builder(
             itemCount: data.length,
             itemBuilder: (_, index) {
-              final user = data[index];
+              final item = data[index];
               return Card(
                 child: ListTile(
-                  title: Text(user["name"] ?? ''),
-                  subtitle: Text('${user["description"] ?? ''} | ${user["grade"] ?? ''}'),
-                  trailing: Text(user["address"] ?? ''),
+                  title: Text(item["language"] ?? ''),
+                  subtitle: Text('Progress: ${item["progress"] ?? ''}'),
+                  trailing: Text(item["last_updated"] ?? ''),
                 ),
               );
             },
@@ -160,9 +149,9 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildUsersCopyList() {
+  Widget _buildProgressList() {
     return ValueListenableBuilder<List<Map<String, dynamic>>>(
-      valueListenable: usersCopyNotifier,
+      valueListenable: progressNotifier,
       builder: (context, data, _) {
         if (isLoading || data.isEmpty) {
           return const Center(child: CircularProgressIndicator());
@@ -171,18 +160,18 @@ class _MainScreenState extends State<MainScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Users Copy", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text("Language Progress", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 8),
             Expanded(
               child: ListView.builder(
                 itemCount: data.length,
                 itemBuilder: (_, index) {
-                  final user = data[index];
+                  final item = data[index];
                   return Card(
                     child: ListTile(
-                      title: Text(user["name"] ?? ''),
-                      subtitle: Text('${user["description"] ?? ''} | ${user["grade"] ?? ''}'),
-                      trailing: Text(user["address"] ?? ''),
+                      title: Text(item["language"] ?? ''),
+                      subtitle: Text('Progress: ${item["progress"] ?? ''}'),
+                      trailing: Text(item["last_updated"] ?? ''),
                     ),
                   );
                 },
@@ -264,11 +253,6 @@ class _MainScreenState extends State<MainScreen> {
                 label: const Text("Close"),
               ),
               ElevatedButton.icon(
-                onPressed: _clearUserCopy,
-                icon: const Icon(Icons.delete),
-                label: const Text("Clear"),
-              ),
-              ElevatedButton.icon(
                 onPressed: _generateSchemaInfo,
                 icon: const Icon(Icons.schema),
                 label: const Text("Show Schema"),
@@ -279,9 +263,9 @@ class _MainScreenState extends State<MainScreen> {
           Expanded(
             child: Row(
               children: [
-                Flexible(child: _buildList(users, "Users")),
+                Flexible(child: _buildList(progressRecords, "Language Progress")),
                 const VerticalDivider(),
-                Flexible(child: _buildUsersCopyList()),
+                Flexible(child: _buildProgressList()),
               ],
             ),
           ),

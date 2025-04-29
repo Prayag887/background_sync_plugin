@@ -11,8 +11,8 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.prayag.flutter_workmanager_plugin.data.DatabaseExtractor
-import com.prayag.flutter_workmanager_plugin.presentation.worker.UserSyncWorker
 import com.prayag.flutter_workmanager_plugin.service.TaskMonitorService
+import com.prayag.flutter_workmanager_plugin.presentation.worker.UserSyncWorker
 import io.flutter.plugin.common.MethodCall
 
 class PluginViewModel {

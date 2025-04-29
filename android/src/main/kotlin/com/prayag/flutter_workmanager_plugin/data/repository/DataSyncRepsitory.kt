@@ -2,9 +2,9 @@ package com.prayag.flutter_workmanager_plugin.data.repository
 
 import android.database.sqlite.SQLiteDatabase
 import android.util.Log
-import com.prayag.flutter_workmanager_plugin.data.datasource.local.DatabaseDataSource
 import com.prayag.flutter_workmanager_plugin.data.model.SyncData
 import com.prayag.flutter_workmanager_plugin.domain.model.TableConfig
+import com.prayag.flutter_workmanager_plugin.workmanager.data.datasource.local.DatabaseDataSource
 import com.prayag.flutter_workmanager_plugin.workmanager.data.datasource.remote.ApiCredentials
 import com.prayag.flutter_workmanager_plugin.workmanager.data.datasource.remote.ApiDataSource
 import kotlinx.coroutines.Dispatchers

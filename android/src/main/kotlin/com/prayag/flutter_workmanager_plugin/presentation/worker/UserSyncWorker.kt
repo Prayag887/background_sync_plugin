@@ -1,4 +1,4 @@
-package com.prayag.flutter_workmanager_plugin.workmanager.presentation.worker
+package com.prayag.flutter_workmanager_plugin.presentation.worker
 
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
@@ -29,7 +29,7 @@ class UserSyncWorker(
         val dbPath = inputData.getString("dbPath") ?: return@withContext Result.failure()
         val dbName = inputData.getString("dbName") ?: return@withContext Result.failure()
 
-        // Get all queries
+        // Get all select queries
         val dbQueryProgress = inputData.getString("dbQueryProgress") ?: return@withContext Result.failure()
         val dbQueryPractice = inputData.getString("dbQueryPractice") ?: return@withContext Result.failure()
         val dbQueryAttempts = inputData.getString("dbQueryAttempts") ?: return@withContext Result.failure()
@@ -53,6 +53,8 @@ class UserSyncWorker(
         val x_package_id = inputData.getString("x_package_id") ?: return@withContext Result.failure()
         val deviceType = inputData.getString("deviceType") ?: return@withContext Result.failure()
         val version = inputData.getString("version") ?: return@withContext Result.failure()
+
+        Log.d(TAG, "Starting user sync work with database: $dbPath/$dbName")
 
         val filePath = File(dbPath, dbName).absolutePath
         val dbFile = File(filePath)

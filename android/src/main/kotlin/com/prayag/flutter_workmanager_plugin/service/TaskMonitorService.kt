@@ -50,7 +50,7 @@ class TaskMonitorService : Service() {
                         android.database.sqlite.SQLiteDatabase.OPEN_READWRITE
                     )
 
-                    val totalCursor = db.rawQuery("SELECT COUNT(*) FROM users", null)
+                    val totalCursor = db.rawQuery("", null) // queries here
                     val totalRecords = if (totalCursor.moveToFirst()) totalCursor.getInt(0) else 0
                     totalCursor.close()
 
@@ -59,7 +59,7 @@ class TaskMonitorService : Service() {
 
                     while (offset < totalRecords) {
                         val cursor = db.rawQuery(
-                            "SELECT * FROM users LIMIT $batchSize OFFSET $offset", null
+                            "SELECT name FROM sqlite_master WHERE type = 'table';", null // SELECT * FROM users LIMIT $batchSize OFFSET $offset queries here
                         )
 
                         val batch = JSONArray()
