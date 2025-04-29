@@ -11,8 +11,8 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.prayag.flutter_workmanager_plugin.data.DatabaseExtractor
-import com.prayag.flutter_workmanager_plugin.workmanager.UserSyncWorker
 import com.prayag.flutter_workmanager_plugin.service.TaskMonitorService
+import com.prayag.flutter_workmanager_plugin.presentation.worker.UserSyncWorker
 import io.flutter.plugin.common.MethodCall
 
 class PluginViewModel {
@@ -22,6 +22,12 @@ class PluginViewModel {
     private var dbQueryPractice: String? = null
     private var dbQueryAttempts: String? = null
     private var dbQuerySuperSync: String? = null
+
+
+    private var dbInsertQueryProgress: String? = null
+    private var dbInsertQueryPractice: String? = null
+    private var dbInsertQueryAttempts: String? = null
+    private var dbInsertQuerySuperSync: String? = null
 
     private var apiRouteProgress: String? = null
     private var apiRoutePractice: String? = null
@@ -44,9 +50,16 @@ class PluginViewModel {
                     intent.putExtra("dbPath", dbPath)
                     intent.putExtra("dbName", dbName)
                     intent.putExtra("dbQueryProgress", dbQueryProgress)
-                    intent.putExtra("apiRoutePractice", apiRoutePractice)
+                    intent.putExtra("dbQueryPractice", dbQueryPractice)
                     intent.putExtra("dbQueryAttempts", dbQueryAttempts)
                     intent.putExtra("dbQuerySuperSync", dbQuerySuperSync)
+
+                    // db insert queries
+
+                    intent.putExtra("dbInsertQueryProgress", dbInsertQueryProgress)
+                    intent.putExtra("dbInsertQueryPractice", dbInsertQueryPractice)
+                    intent.putExtra("dbInsertQueryAttempts", dbInsertQueryAttempts)
+                    intent.putExtra("dbInsertQuerySuperSync", dbInsertQuerySuperSync)
 
                     // api routes and post credentials
                     intent.putExtra("apiRouteProgress", apiRouteProgress)
@@ -85,6 +98,11 @@ class PluginViewModel {
         dbQueryPractice = call.argument("dbQueryPractice") ?: ""
         dbQueryAttempts = call.argument("dbQueryAttempts") ?: ""
         dbQuerySuperSync = call.argument("dbQuerySuperSync") ?: ""
+
+        dbInsertQueryProgress = call.argument("dbInsertQueryProgress") ?: ""
+        dbInsertQueryPractice = call.argument("dbInsertQueryPractice") ?: ""
+        dbInsertQueryAttempts = call.argument("dbInsertQueryAttempts") ?: ""
+        dbInsertQuerySuperSync = call.argument("dbInsertQuerySuperSync") ?: ""
     }
 
     fun updateApiConfig(call: MethodCall) {
@@ -117,6 +135,10 @@ class PluginViewModel {
             "dbQueryAttempts" to dbQueryAttempts,
             "dbQuerySuperSync" to dbQuerySuperSync,
 
+            "dbInsertQueryProgress" to dbInsertQueryProgress,
+            "dbInsertQueryPractice" to  dbInsertQueryPractice,
+            "dbInsertQueryAttempts" to dbInsertQueryAttempts,
+            "dbInsertQuerySuperSync" to dbInsertQuerySuperSync,
 
             // api routes and credentials for api posting:
             "apiRouteProgress" to apiRouteProgress,
