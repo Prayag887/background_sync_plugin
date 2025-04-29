@@ -4,7 +4,7 @@ import android.database.sqlite.SQLiteDatabase
 import android.util.Log
 import com.prayag.flutter_workmanager_plugin.data.repository.DataSyncRepository
 import com.prayag.flutter_workmanager_plugin.domain.model.TableConfig
-import com.prayag.flutter_workmanager_plugin.workmanager.data.datasource.remote.ApiCredentials
+import com.prayag.flutter_workmanager_plugin.data.datasource.remote.ApiCredentials
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

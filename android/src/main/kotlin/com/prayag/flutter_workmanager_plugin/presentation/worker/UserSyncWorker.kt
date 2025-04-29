@@ -10,7 +10,7 @@ import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.prayag.flutter_workmanager_plugin.domain.model.TableConfig
 import com.prayag.flutter_workmanager_plugin.utils.ServiceLocator
-import com.prayag.flutter_workmanager_plugin.workmanager.data.datasource.remote.ApiCredentials
+import com.prayag.flutter_workmanager_plugin.data.datasource.remote.ApiCredentials
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -138,6 +138,7 @@ class UserSyncWorker(
             "dbInsertQueryAttempts" to inputData.getString("dbInsertQueryAttempts"),
             "dbInsertQuerySuperSync" to inputData.getString("dbInsertQuerySuperSync"),
 
+            //api routes and authentication details
             "apiRouteProgress" to inputData.getString("apiRouteProgress"),
             "apiRoutePractice" to inputData.getString("apiRoutePractice"),
             "apiRouteAttempts" to inputData.getString("apiRouteAttempts"),

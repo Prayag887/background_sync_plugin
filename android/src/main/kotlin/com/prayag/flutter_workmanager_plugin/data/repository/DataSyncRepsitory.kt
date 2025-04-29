@@ -5,8 +5,8 @@ import android.util.Log
 import com.prayag.flutter_workmanager_plugin.data.model.SyncData
 import com.prayag.flutter_workmanager_plugin.domain.model.TableConfig
 import com.prayag.flutter_workmanager_plugin.workmanager.data.datasource.local.DatabaseDataSource
-import com.prayag.flutter_workmanager_plugin.workmanager.data.datasource.remote.ApiCredentials
-import com.prayag.flutter_workmanager_plugin.workmanager.data.datasource.remote.ApiDataSource
+import com.prayag.flutter_workmanager_plugin.data.datasource.remote.ApiCredentials
+import com.prayag.flutter_workmanager_plugin.data.datasource.remote.ApiDataSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

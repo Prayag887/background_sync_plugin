@@ -1,4 +1,4 @@
-package com.prayag.flutter_workmanager_plugin.workmanager.data.datasource.remote
+package com.prayag.flutter_workmanager_plugin.data.datasource.remote
 
 import android.util.Log
 import com.prayag.flutter_workmanager_plugin.data.model.ApiResponse
